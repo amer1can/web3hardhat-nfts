@@ -5,9 +5,11 @@
     <button v-if="!account" class="walletbtn mt-3" @click="connect">{{ buttonStatus }}</button>
     <button v-else class="walletbtn mt-3" @click="askContractToMintNft">Mint NFT</button>
     <label class="status d-block mt-3">{{ walletConnectionStatus }}</label>
-    <div v-if="nft == null" class="newnft mt-3">
-      <p>Hey there! We've minted your NFT!</p>
-      <p><a :href='`https://rinkeby.rarible.com/token/${nft.from}:${nft.tokenId}`' target="_blank">Here's the link</a></p>
+    <div  v-if="nft == null" >
+      <div class="newnft mt-3" v-for="elem in nft" :key="elem.tokenId">
+        <p>Hey there! We've minted your NFT!</p>
+        <p><a :href='`https://rinkeby.rarible.com/token/${elem.from}:${elem.tokenId}`' target="_blank">Here's the link</a></p>
+      </div>
     </div>
     <div class="newnft mt-3" v-else>
       <h3>No new NFTs :(</h3>
@@ -34,7 +36,7 @@ export default {
       buttonStatus: "Connect to Wallet",
       walletConnectionStatus: null,
       account: null,
-      nft: {}
+      nft: []
     }
   },
   mounted() {
@@ -96,10 +98,11 @@ export default {
           const connectedContract = new ethers.Contract(this.contractAddress, this.contractABI, signer);
           connectedContract.on("NewNFTMinted", (from, tokenId) => {
             console.log(from, tokenId.toNumber());
-            this.nft = {
-              from,
-              tokenId: tokenId.toNumber()
+            const newNft = {
+              from: from,
+              tokenId: tokenId
             }
+            this.nft.push(newNft);
             // alert(`Hey there! We've minted your NFT. It may be blank right now. It can take a max of 10 min to show up on OpenSea. Here's the link: <https://rinkeby.rarible.com/token/${this.contractAddress}:${tokenId.toNumber()}>`)
           })
 
