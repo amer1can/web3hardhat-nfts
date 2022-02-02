@@ -11,9 +11,9 @@ async function main() {
     await txn.wait();
     console.log("Minted NFT #1");
 
-    txn = await epicNftContract.makeEpicNFT();
-    await txn.wait();
-    console.log("Minted NFT #2");
+    // txn = await epicNftContract.makeEpicNFT();
+    // await txn.wait();
+    // console.log("Minted NFT #2");
 
 }
 

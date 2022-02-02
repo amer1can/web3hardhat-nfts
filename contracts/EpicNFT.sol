@@ -23,6 +23,8 @@ contract EpicNFT is ERC721URIStorage {
     string[] secondWords = ["Axe", "Machete", "Dagger", "Grenade", "Riffle", "Gun"];
     string[] thirdWords = ["Totoro", "Lupin", "Pikachu", "Uzumaki", "Ikari", "Goku"];
 
+    event NewNFTMinted(address sender, uint256 tokenId);
+
     // We need to pass the name of our NFTs token and its symbol.
     constructor() ERC721 ("ThreeWordsNFT", "3WORDS") {
         console.log("This is new 3WORDS NFT CONTRACT!");
@@ -101,6 +103,7 @@ contract EpicNFT is ERC721URIStorage {
         _tokenIds.increment();
 
         console.log("An NFT w/ ID %s has been minted to %s", newItemId, msg.sender);
+        emit NewNFTMinted(msg.sender, newItemId);
     }
 }
 
@@ -166,7 +169,10 @@ data:application/json;base64,ewogICAgIm5hbWUiOiAiYW1lcjFjYW4ncyBORlQiLAogICAgImR
 3) 0xb4Fb52FD2152f277b1307F5d06F5a3E9aaEC288A
 
 4) two random contract with 3WORDS: 0xd93ed8A20C4083266b5927Fb230f135f7B53bC48
+5) with events: 0x66CeeeF396Db2213e119034227c2e1A5E135A30C
 
+
+https://rinkeby.rarible.com/
 
 */
 
