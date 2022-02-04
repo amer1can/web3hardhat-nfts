@@ -18,10 +18,14 @@ contract EpicNFT is ERC721URIStorage {
     // _tokenIds is state variable which means if we change it, the value is stored on the contract directly.
     Counters.Counter private _tokenIds;
 
-    string baseSvg = "<svg xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='xMinYMin meet' viewBox='0 0 350 350'><style>.base { fill: white; font-family: serif; font-size: 24px; }</style><rect width='100%' height='100%' fill='black' /><text x='50%' y='50%' class='base' dominant-baseline='middle' text-anchor='middle'>";
-    string[] firstWords = ["Cruel", "Clever", "Angry", "Narrow", "Gentle", "Friendly"];
-    string[] secondWords = ["Axe", "Machete", "Dagger", "Grenade", "Riffle", "Gun"];
-    string[] thirdWords = ["Totoro", "Lupin", "Pikachu", "Uzumaki", "Ikari", "Goku"];
+    string baseSvgFirstPart = "<svg xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='xMinYMin meet' viewBox='0 0 350 350'><style>.base { fill: white; font-family: serif; font-size: 24px; }</style><rect width='100%' height='100%' fill='";
+    string baseSvgSecondPart = "' /><text x='50%' y='50%' class='base' dominant-baseline='middle' text-anchor='middle'>";
+
+    string[] firstWords = ["Cruel", "Clever", "Angry", "Narrow", "Gentle", "Friendly", "Super", "Infinity", "Best"];
+    string[] secondWords = ["Axe", "Machete", "Dagger", "Grenade", "Riffle", "Gun", "Knife", "Sword", "Rocket"];
+    string[] thirdWords = ["Totoro", "Lupin", "Pikachu", "Uzumaki", "Ikari", "Goku", "Kinzaru", "Osiba", "Kenchi"];
+
+    string[] colors = ["red", "green", "blue", "indigo", "navy", "purple", "olive"];
 
     event NewNFTMinted(address sender, uint256 tokenId);
 
@@ -34,9 +38,7 @@ contract EpicNFT is ERC721URIStorage {
     function pickRandomFirstWord(uint256 tokenId) public view returns (string memory) {
         //seed the random generator
         uint256 rand = random(string(abi.encodePacked("FIRST_WORD", Strings.toString(tokenId))));
-        console.log("value rand from random:", rand);
         rand = rand % firstWords.length; //Number between 0 and the length of the array
-        console.log("value rand after %:", rand);
         return firstWords[rand];
     }
 
@@ -54,6 +56,12 @@ contract EpicNFT is ERC721URIStorage {
         return thirdWords[rand];
     }
 
+    function pickRandomColor(uint256 tokenId) public view returns (string memory) {
+        uint256 rand =  random(string(abi.encodePacked("COLOR", Strings.toString(tokenId))));
+        rand = rand % colors.length;
+        return colors[rand];
+    }
+
     function random(string memory input) internal pure returns(uint256) {
         return uint256(keccak256(abi.encodePacked(input)));
     }
@@ -62,13 +70,15 @@ contract EpicNFT is ERC721URIStorage {
     function makeEpicNFT() public {
         // Get the current tokenId, this starts at 0.
         uint256 newItemId = _tokenIds.current();
+        require(newItemId < 50, "Max 50 NFTs done!");
 
         string memory first = pickRandomFirstWord(newItemId);
         string memory second = pickRandomSecondWord(newItemId);
         string memory third = pickRandomThirdWord(newItemId);
+        string memory color = pickRandomColor(newItemId);
         string memory nftTitle = string(abi.encodePacked(first, second, third));
         // then concatenate it all together, and then close the <text> and <svg> tags.
-        string memory finalSvg = string(abi.encodePacked(baseSvg, first, second, third, "</text></svg>"));
+        string memory finalSvg = string(abi.encodePacked(baseSvgFirstPart, color, baseSvgSecondPart, first, second, third, "</text></svg>"));
 
         // Get all the JSON metadata in place and base64 encode it.
         string memory json = Base64.encode(
@@ -76,7 +86,7 @@ contract EpicNFT is ERC721URIStorage {
                 string(
                     abi.encodePacked(
                         '{"name": "', nftTitle,
-                        '", "description": "Awesome new NFT collection of black squares.","image": "data:image/svg+xml;base64,',
+                        '", "description": "Awesome new NFT collection of color squares.","image": "data:image/svg+xml;base64,',
                         Base64.encode(bytes(finalSvg)),
                         '"}'
                     )
@@ -86,10 +96,9 @@ contract EpicNFT is ERC721URIStorage {
 
         string memory finalTokenUri = string(abi.encodePacked("data:application/json;base64,", json));
 
-        console.log("\n");
-        console.log("Final TokenURI ------------\n");
+        console.log("------ Final TokenURI ------");
         console.log(finalTokenUri);
-        console.log("----------------------\n");
+        console.log("----------------------------");
 
         // Actually mint the NFT to the sender using msg.sender.
         _safeMint(msg.sender, newItemId);
@@ -97,7 +106,6 @@ contract EpicNFT is ERC721URIStorage {
         // Set the NFTs unique identifier along with the data associated w/ that unique identifier.
         // It's literally us setting the actual data that makes the NFT valuable
         _setTokenURI(newItemId, finalTokenUri); //see tokenURI info below
-        console.log("An NFT w/ ID %s has been minted to %s", newItemId, msg.sender);
 
         // Increment the counter for when the next NFT is minted.
         _tokenIds.increment();
@@ -170,6 +178,7 @@ data:application/json;base64,ewogICAgIm5hbWUiOiAiYW1lcjFjYW4ncyBORlQiLAogICAgImR
 
 4) two random contract with 3WORDS: 0xd93ed8A20C4083266b5927Fb230f135f7B53bC48
 5) with events: 0x66CeeeF396Db2213e119034227c2e1A5E135A30C
+6) color, limit50:  0xeea903D138be8F6a6c040f5232259C3BeA25e9D2
 
 
 https://rinkeby.rarible.com/

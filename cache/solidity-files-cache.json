@@ -74,8 +74,8 @@
       ]
     },
     "C:\\_code\\__smart_contracts\\project_nft\\epic-nfts\\contracts\\EpicNFT.sol": {
-      "lastModificationDate": 1643810521231,
-      "contentHash": "bdc70a962d4a6b1330efa2e59727abae",
+      "lastModificationDate": 1643872079918,
+      "contentHash": "b80cd7334d924ad3bbe5d44821f51ab6",
       "sourceName": "contracts/EpicNFT.sol",
       "solcConfig": {
         "version": "0.8.4",

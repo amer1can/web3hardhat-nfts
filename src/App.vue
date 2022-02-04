@@ -5,16 +5,19 @@
     <button v-if="!account" class="walletbtn mt-3" @click="connect">{{ buttonStatus }}</button>
     <button v-else class="walletbtn mt-3" @click="askContractToMintNft">Mint NFT</button>
     <label class="status d-block mt-3">{{ walletConnectionStatus }}</label>
-    <div  v-if="nft == null" >
-      <div class="newnft mt-3" v-for="elem in nft" :key="elem.tokenId">
-        <p>Hey there! We've minted your NFT!</p>
-        <p><a :href='`https://rinkeby.rarible.com/token/${elem.from}:${elem.tokenId}`' target="_blank">Here's the link</a></p>
-      </div>
+    <label class="status d-block mt-3">{{ networkStatus }}</label>
+
+    <div class="newnft mt-3" v-if="tokenId">
+      <p class="mess">Hey there! We've minted your NFT!</p>
+      <p><a :href='`https://rinkeby.rarible.com/token/${contractAddress}:${tokenId}`' target="_blank">Here's the link</a></p>
+      <p class="total mt-2 text-center text-uppercase">{{ tokenId }} / 50 minted</p>
     </div>
     <div class="newnft mt-3" v-else>
       <h3>No new NFTs :(</h3>
+<!--      <p class="total mt-2 text-center text-uppercase">{{ tokenId }} / 50 minted</p>-->
     </div>
   </div>
+
   <div class="footer">
     <img src="./assets/twitter-logo.svg" alt="">
     <a href="https://twitter.com/amer1canWM" target="_blank" rel="noreferrer">Seeing on Twitter</a>
@@ -31,12 +34,13 @@ export default {
   name: 'App',
   data() {
     return {
-      contractAddress: "0x66CeeeF396Db2213e119034227c2e1A5E135A30C",
+      contractAddress: "0xeea903D138be8F6a6c040f5232259C3BeA25e9D2",
       contractABI: abi.abi,
       buttonStatus: "Connect to Wallet",
       walletConnectionStatus: null,
+      networkStatus: null,
       account: null,
-      nft: []
+      tokenId: null,
     }
   },
   mounted() {
@@ -54,19 +58,30 @@ export default {
         console.log("We have the ethereum object", ethereum)
       }
 
-      const accounts = await ethereum.request({
-        method: 'eth_accounts'
+      const chainId = await ethereum.request({
+        method: 'eth_chainId'
       });
+      console.log('Connected to chain: ', chainId)
 
-      // проверяем есть ли доступ к уже авторизованным аккаунтам
-      if (accounts.length !==0) {
-        this.account = accounts[0];
-        console.log("Found authorized account: ", this.account);
-        this.buttonStatus = "Connected";
-        this.walletConnectionStatus = "Account: " + this.account;
+      const rinkebyChainId = '0x4';
+      if (chainId !== rinkebyChainId) {
+        alert("You are not connected to Rinkeby Test Network!");
       } else {
-        console.log("No authorized accounts found");
-        this.walletConnectionStatus = "No authorized accounts found";
+        const accounts = await ethereum.request({
+          method: 'eth_accounts'
+        });
+
+        // проверяем есть ли доступ к уже авторизованным аккаунтам
+        if (accounts.length !==0) {
+          this.account = accounts[0];
+          console.log("Found authorized account: ", this.account);
+          this.buttonStatus = "Connected";
+          this.walletConnectionStatus = "Account: " + this.account;
+          await this.setupMintListener();
+        } else {
+          console.log("No authorized accounts found");
+          this.walletConnectionStatus = "No authorized accounts found";
+        }
       }
     },
     async connect() {
@@ -76,13 +91,23 @@ export default {
           alert("Get Metamask!");
         }
 
-        const accounts = await ethereum.request({
-          method: 'eth_requestAccounts'
+        const chainId = await ethereum.request({
+          method: 'eth_chainId'
         });
-        this.account = accounts[0];
-        console.log("Connected: ", this.account);
-        this.buttonStatus = "Connected";
-        this.walletConnectionStatus = "Account: " + this.account;
+        console.log('Connected to chain: ', chainId)
+
+        const rinkebyChainId = '0x4';
+        if (chainId !== rinkebyChainId) {
+          alert("You are not connected to Rinkeby Test Network!");
+        } else {
+          const accounts = await ethereum.request({
+            method: 'eth_requestAccounts'
+          });
+          this.account = accounts[0];
+          console.log("Connected: ", this.account);
+          this.buttonStatus = "Connected";
+          this.walletConnectionStatus = "Account: " + this.account;
+        }
 
       } catch(err) {
         console.log(err);
@@ -96,15 +121,8 @@ export default {
           const provider = new ethers.providers.Web3Provider(ethereum);
           const signer = provider.getSigner();
           const connectedContract = new ethers.Contract(this.contractAddress, this.contractABI, signer);
-          connectedContract.on("NewNFTMinted", (from, tokenId) => {
-            console.log(from, tokenId.toNumber());
-            const newNft = {
-              from: from,
-              tokenId: tokenId
-            }
-            this.nft.push(newNft);
-            // alert(`Hey there! We've minted your NFT. It may be blank right now. It can take a max of 10 min to show up on OpenSea. Here's the link: <https://rinkeby.rarible.com/token/${this.contractAddress}:${tokenId.toNumber()}>`)
-          })
+
+          await this.setupMintListener();
 
           console.log("Going to pop wallet now to pay gas...");
           console.log("Gas price: ", signer.getGasPrice());
@@ -119,7 +137,29 @@ export default {
       } catch(err) {
         console.log(err);
       }
-    }
+    },
+    async setupMintListener() {
+      try {
+        const { ethereum } = window;
+
+        if (ethereum) {
+          const provider = new ethers.providers.Web3Provider(ethereum);
+          const signer = provider.getSigner();
+          const connectedContract = new ethers.Contract(this.contractAddress, this.contractABI, signer);
+          connectedContract.on("NewNFTMinted", (from, tokenId) => {
+            console.log(from, tokenId.toNumber());
+            this.tokenId = tokenId.toNumber();
+            // alert(`Hey there! We've minted your NFT. It may be blank right now. It can take a max of 10 min to show up on OpenSea. Here's the link: <https://rinkeby.rarible.com/token/${this.contractAddress}:${tokenId.toNumber()}>`)
+          })
+          console.log("Setup event listener!")
+
+        } else {
+          console.log("Ethereum object doesn't exist!");
+        }
+      } catch(err) {
+        console.log(err);
+      }
+    },
   }
 }
 </script>
@@ -167,6 +207,19 @@ export default {
   max-width: 320px;
   border: 1px solid grey;
   border-radius: 20px;
+}
+.newnft a {
+  color: crimson;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 20px;
+}
+.mess {
+  color: #e8b756;
+}
+.total {
+  color: darkgrey;
+  font-size: 18px;
 }
 
 .footer {
